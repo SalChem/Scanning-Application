@@ -1,0 +1,15 @@
+Instructions:
+
+Use cmake and point to source directory of CMakeLists.txt
+and use Build folder as destination.
+
+Add the following for configuration: +New Entry
+
+VTK_DIR /Users/administrator/My Projects/VTK-bin
+
+Also, as for now there is no prompt for images, so place the images called in the code under DEBUG in the Build folder.
+
+ui_QTVTK_MSVEApplication.h is not included but will be created by QT after the first compilation.
+
+
+
