@@ -24,24 +24,24 @@
    </size>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="btnDifference">
+   <widget class="QPushButton" name="registration4Marks">
     <property name="geometry">
      <rect>
-      <x>430</x>
-      <y>20</y>
-      <width>311</width>
+      <x>19</x>
+      <y>560</y>
+      <width>231</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Calculate Difference</string>
+     <string>Registration using 4 Landmarks</string>
     </property>
    </widget>
    <widget class="QVTKWidget" name="qvtkWidgetLeft">
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>80</y>
+      <y>85</y>
       <width>361</width>
       <height>439</height>
      </rect>
@@ -51,7 +51,7 @@
     <property name="geometry">
      <rect>
       <x>410</x>
-      <y>80</y>
+      <y>85</y>
       <width>361</width>
       <height>440</height>
      </rect>
@@ -60,22 +60,22 @@
    <widget class="QPushButton" name="beforeRightNippleBtn">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>530</y>
-      <width>131</width>
+      <x>20</x>
+      <y>11</y>
+      <width>181</width>
       <height>32</height>
      </rect>
     </property>
     <property name="text">
-     <string>Set Right Nipple</string>
+     <string>Select Right Nipple</string>
     </property>
    </widget>
    <widget class="QPushButton" name="beforeNavalBtn">
     <property name="geometry">
      <rect>
-      <x>260</x>
-      <y>530</y>
-      <width>114</width>
+      <x>218</x>
+      <y>50</y>
+      <width>161</width>
       <height>32</height>
      </rect>
     </property>
@@ -86,63 +86,92 @@
    <widget class="QPushButton" name="beforeLeftNippleBtn">
     <property name="geometry">
      <rect>
-      <x>140</x>
-      <y>530</y>
-      <width>114</width>
+      <x>218</x>
+      <y>10</y>
+      <width>161</width>
       <height>32</height>
      </rect>
     </property>
     <property name="text">
-     <string>Set Left Nipple</string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit">
-    <property name="geometry">
-     <rect>
-      <x>30</x>
-      <y>560</y>
-      <width>341</width>
-      <height>31</height>
-     </rect>
+     <string>Select Left Nipple</string>
     </property>
    </widget>
    <widget class="QPushButton" name="afterRightNippleBtn">
     <property name="geometry">
      <rect>
-      <x>400</x>
-      <y>530</y>
-      <width>131</width>
+      <x>410</x>
+      <y>10</y>
+      <width>171</width>
       <height>32</height>
      </rect>
     </property>
     <property name="text">
-     <string>Set Right Nipple</string>
+     <string>Select Right Nipple</string>
     </property>
    </widget>
    <widget class="QPushButton" name="afterLeftNippleBtn">
     <property name="geometry">
      <rect>
-      <x>530</x>
-      <y>530</y>
-      <width>114</width>
+      <x>580</x>
+      <y>11</y>
+      <width>191</width>
       <height>32</height>
      </rect>
     </property>
     <property name="text">
-     <string>Set Left Nipple</string>
+     <string>Select Left Nipple</string>
     </property>
    </widget>
    <widget class="QPushButton" name="afterNavalBtn">
     <property name="geometry">
      <rect>
-      <x>640</x>
-      <y>530</y>
-      <width>114</width>
+      <x>581</x>
+      <y>51</y>
+      <width>191</width>
       <height>32</height>
      </rect>
     </property>
     <property name="text">
      <string>Set Naval</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="beforeSternumNotchBtn">
+    <property name="geometry">
+     <rect>
+      <x>19</x>
+      <y>49</y>
+      <width>181</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select Sternal Notch</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="afterSternumNotchBtn">
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>51</y>
+      <width>171</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select Sternal Notch</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="registration3Marks">
+    <property name="geometry">
+     <rect>
+      <x>19</x>
+      <y>527</y>
+      <width>231</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Registration using 3 Landmarks</string>
     </property>
    </widget>
   </widget>

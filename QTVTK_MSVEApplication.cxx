@@ -36,19 +36,23 @@
 #include <vtkLandmarkTransform.h>
 #include <vtkMatrix4x4.h>
 
-//double pos;
 double centerReferenceLeft[3], centerReferenceRight[3];
-double posBeforeRightNipple[3],posAfterRightNipple[3],posBeforeLeftNipple[3],posAfterLeftNipple[3],posBeforeNaval[3],posAfterNaval[3];
-
+double posBeforeSternumNotch[3],posBeforeRightNipple[3],posAfterRightNipple[3],posBeforeLeftNipple[3],posAfterSternumNotch[3],posAfterLeftNipple[3],posBeforeNaval[3],posAfterNaval[3];
 
 vtkSmartPointer<vtkPolyData> input1;
 vtkSmartPointer<vtkPolyData> input2;
+
+vtkSmartPointer<vtkPoints> sourcePoints =
+vtkSmartPointer<vtkPoints>::New();
+
+vtkSmartPointer<vtkPoints> targetPoints =
+vtkSmartPointer<vtkPoints>::New();
 
 // Constructor
 QTVTK_MSVEApplication::QTVTK_MSVEApplication() 
 {
 	this->setupUi(this);
-
+	
 	//PLY 1	
 	vtkSmartPointer<vtkPLYReader> reader1 = vtkSmartPointer<vtkPLYReader>::New();
 	reader1->SetFileName("Before_Nahom.ply");
@@ -63,7 +67,7 @@ QTVTK_MSVEApplication::QTVTK_MSVEApplication()
 	
 	input1->GetCenter(centerReferenceLeft);	
 	input2->GetCenter(centerReferenceRight);	
-		
+	
 	vtkSmartPointer<vtkPolyDataMapper> mapper1 = vtkSmartPointer<vtkPolyDataMapper>::New();
 	mapper1->SetInputData(input1);
 	vtkSmartPointer<vtkActor> actor1 = vtkSmartPointer<vtkActor>::New();
@@ -73,7 +77,7 @@ QTVTK_MSVEApplication::QTVTK_MSVEApplication()
 	mapper2->SetInputData(input2);
 	vtkSmartPointer<vtkActor> actor2 = vtkSmartPointer<vtkActor>::New();
 	actor2->SetMapper(mapper2);
-
+	
 	// VTK Renderer
 	vtkSmartPointer<vtkRenderer> leftRenderer = 
 	vtkSmartPointer<vtkRenderer>::New();
@@ -88,7 +92,7 @@ QTVTK_MSVEApplication::QTVTK_MSVEApplication()
 	// VTK/Qt wedded
 	this->qvtkWidgetLeft->GetRenderWindow()->AddRenderer(leftRenderer);
 	this->qvtkWidgetRight->GetRenderWindow()->AddRenderer(rightRenderer);
-
+	
 	leftRenderer->GetActiveCamera()->SetPosition(0,-1,0);
 	leftRenderer->GetActiveCamera()->SetFocalPoint(0,0,0);
 	leftRenderer->ResetCamera();
@@ -97,12 +101,15 @@ QTVTK_MSVEApplication::QTVTK_MSVEApplication()
 	rightRenderer->GetActiveCamera()->SetFocalPoint(0,0,0);
 	rightRenderer->ResetCamera();
 	
-	 // Add a Handle widget to the right renderer
-	 this->HandleWidgetRight = vtkSmartPointer<vtkHandleWidget>::New();
-	 this->HandleWidgetRight->SetInteractor(this->qvtkWidgetRight->GetInteractor());
-	 this->HandleWidgetLeft = vtkSmartPointer<vtkHandleWidget>::New();
-	 this->HandleWidgetLeft->SetInteractor(this->qvtkWidgetLeft->GetInteractor());
-
+	rightRenderer->SetActiveCamera(leftRenderer->GetActiveCamera());	
+	this->qvtkWidgetLeft->GetRenderWindow()->AddObserver(vtkCommand::AnyEvent, this, &QTVTK_MSVEApplication::ModifiedHandler);
+	
+	// Add a Handle widget to the right renderer
+	this->HandleWidgetRight = vtkSmartPointer<vtkHandleWidget>::New();
+	this->HandleWidgetRight->SetInteractor(this->qvtkWidgetRight->GetInteractor());
+	this->HandleWidgetLeft = vtkSmartPointer<vtkHandleWidget>::New();
+	this->HandleWidgetLeft->SetInteractor(this->qvtkWidgetLeft->GetInteractor());
+	
 	vtkPointHandleRepresentation3D *rep = vtkPointHandleRepresentation3D::SafeDownCast(HandleWidgetLeft->GetRepresentation());
 	HandleWidgetLeft->EnableAxisConstraintOff();
 	
@@ -123,21 +130,13 @@ QTVTK_MSVEApplication::QTVTK_MSVEApplication()
 	
 	this->HandleWidgetRight->On();	
 	
-	//Calling KeypressCallBackfunction to get positions
-	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-	renderWindowInteractor = this->qvtkWidgetLeft->GetInteractor();	
-	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor2 = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-	renderWindowInteractor2 = this->qvtkWidgetRight->GetInteractor();
-			
 	vtkSmartPointer<vtkPolygonalSurfacePointPlacer>  pointPlacer = vtkSmartPointer<vtkPolygonalSurfacePointPlacer>::New();
 	pointPlacer->AddProp(actor1);
-	//pointPlacer->GetPolys()->AddItem(clean1->GetPolyDataInput(0));
 	pointPlacer->GetPolys()->AddItem(input1);
 	rep->SetPointPlacer(pointPlacer);
-
+	
 	vtkSmartPointer<vtkPolygonalSurfacePointPlacer>  pointPlacer2 = vtkSmartPointer<vtkPolygonalSurfacePointPlacer>::New();
 	pointPlacer2->AddProp(actor2);
-	//pointPlacer2->GetPolys()->AddItem(clean2->GetPolyDataInput(0));
 	pointPlacer2->GetPolys()->AddItem(input2);
 	rep2->SetPointPlacer(pointPlacer2);
 	
@@ -148,115 +147,122 @@ QTVTK_MSVEApplication::QTVTK_MSVEApplication()
 	// Set up action signals and slots
 	connect(this->actionExit, SIGNAL(triggered()), this, SLOT(slotExit()));
 }
+void QTVTK_MSVEApplication::ModifiedHandler() 
+{
+	this->qvtkWidgetRight->GetRenderWindow()->Render();
+}
 
+void QTVTK_MSVEApplication::on_beforeSternumNotchBtn_clicked()
+{
+	posBeforeSternumNotch[0] = posLeftMesh[0];
+	posBeforeSternumNotch[1] = posLeftMesh[1];
+	posBeforeSternumNotch[2] = posLeftMesh[2];
+	std::cout << "Position of sternal notch on first mesh: " << posLeftMesh[0] << " " << posLeftMesh[1] << " " << posLeftMesh[2]<< "\n";
+}
 
 void QTVTK_MSVEApplication::on_beforeRightNippleBtn_clicked()
 {
 	posBeforeRightNipple[0] = posLeftMesh[0];
 	posBeforeRightNipple[1] = posLeftMesh[1];
 	posBeforeRightNipple[2] = posLeftMesh[2];
-	std::cout << "Position right nipple on first mesh: " << posLeftMesh[0] << " " << posLeftMesh[1] << " " << posLeftMesh[2]<< "\n";
-
-
+		sourcePoints->InsertNextPoint(posBeforeRightNipple);
+	std::cout << "Position of right nipple on first mesh: " << posLeftMesh[0] << " " << posLeftMesh[1] << " " << posLeftMesh[2]<< "\n";
 }
+
 void QTVTK_MSVEApplication::on_beforeLeftNippleBtn_clicked()
 {
-	std::cout << "Position left nipple on first mesh: " << posLeftMesh[0] << " " << posLeftMesh[1] << " " << posLeftMesh[2]<< "\n";
+	std::cout << "Position of left nipple on first mesh: " << posLeftMesh[0] << " " << posLeftMesh[1] << " " << posLeftMesh[2]<< "\n";
 	posBeforeLeftNipple[0] = posLeftMesh[0];
 	posBeforeLeftNipple[1] = posLeftMesh[1];
 	posBeforeLeftNipple[2] = posLeftMesh[2];
-	
+		sourcePoints->InsertNextPoint(posBeforeLeftNipple);
 }
+
 void QTVTK_MSVEApplication::on_beforeNavalBtn_clicked()
 {
 	std::cout << "Position of naval on first mesh: " << posLeftMesh[0] << " " << posLeftMesh[1] << " " << posLeftMesh[2]<< "\n";
 	posBeforeNaval[0] = posLeftMesh[0];
-		posBeforeNaval[1] = posLeftMesh[1];
-		posBeforeNaval[2] = posLeftMesh[2];
-	
+	posBeforeNaval[1] = posLeftMesh[1];
+	posBeforeNaval[2] = posLeftMesh[2];	
+		sourcePoints->InsertNextPoint(posBeforeNaval);
 }
+
+void QTVTK_MSVEApplication::on_afterSternumNotchBtn_clicked()
+{
+	posAfterSternumNotch[0] = posLeftMesh[0];
+	posAfterSternumNotch[1] = posLeftMesh[1];
+	posAfterSternumNotch[2] = posLeftMesh[2];
+	std::cout << "Position of sternal notch on first mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
+}
+
 void QTVTK_MSVEApplication::on_afterRightNippleBtn_clicked()
 {
 	std::cout << "Position of right nipple on second mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
 	posAfterRightNipple[0] = posRightMesh[0];
-		posAfterRightNipple[1] = posRightMesh[1];
-		posAfterRightNipple[2] = posRightMesh[2];
-	
+	posAfterRightNipple[1] = posRightMesh[1];
+	posAfterRightNipple[2] = posRightMesh[2];
+		targetPoints->InsertNextPoint(posAfterRightNipple);
 }
+
 void QTVTK_MSVEApplication::on_afterLeftNippleBtn_clicked()
 {
-	std::cout << "Position left nipple on second mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
+	std::cout << "Position of left nipple on second mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
 	posAfterLeftNipple[0] = posRightMesh[0];
-		posAfterLeftNipple[1] = posRightMesh[1];
-		posAfterLeftNipple[2] = posRightMesh[2];
-	
+	posAfterLeftNipple[1] = posRightMesh[1];
+	posAfterLeftNipple[2] = posRightMesh[2];	
+		targetPoints->InsertNextPoint(posAfterLeftNipple);
 }
+
 void QTVTK_MSVEApplication::on_afterNavalBtn_clicked()
 {
 	std::cout << "Position of naval on second mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
 	posAfterNaval[0] = posRightMesh[0];
 	posAfterNaval[1] = posRightMesh[1];
-	posAfterNaval[2] = posRightMesh[2];
+	posAfterNaval[2] = posRightMesh[2];	
+		targetPoints->InsertNextPoint(posAfterNaval);
+}
+void QTVTK_MSVEApplication::on_registration3Marks_clicked()
+{
+	std::cout<< "\n" << "Registration using 3 landmarks..."<< "\n"<< "\n";
+	registration();
 	
 }
-
-void QTVTK_MSVEApplication::on_btnDifference_clicked()
+void QTVTK_MSVEApplication::on_registration4Marks_clicked()
 {
-	std::cout<< "\n" << "Registration..."<< "\n"<< "\n";
+	std::cout<< "\n" << "Registration using 4 landmarks..."<< "\n"<< "\n";	
+	sourcePoints->InsertNextPoint(posBeforeSternumNotch);
+	targetPoints->InsertNextPoint(posAfterSternumNotch);
+	registration();
 	
-	vtkSmartPointer<vtkPoints> sourcePoints =
-    vtkSmartPointer<vtkPoints>::New();
-	sourcePoints->InsertNextPoint(posBeforeRightNipple);
-	sourcePoints->InsertNextPoint(posBeforeLeftNipple);
-	sourcePoints->InsertNextPoint(posBeforeNaval);
+}
+void QTVTK_MSVEApplication::registration()	
+{		
+
 	
-	vtkSmartPointer<vtkPoints> targetPoints =
-    vtkSmartPointer<vtkPoints>::New();
-	targetPoints->InsertNextPoint(posAfterRightNipple);
-	targetPoints->InsertNextPoint(posAfterLeftNipple);
-	targetPoints->InsertNextPoint(posAfterNaval);
+	
 	
 	// Setup the transform
 	vtkSmartPointer<vtkLandmarkTransform> landmarkTransform = 
     vtkSmartPointer<vtkLandmarkTransform>::New();
 	landmarkTransform->SetSourceLandmarks(sourcePoints);
 	landmarkTransform->SetTargetLandmarks(targetPoints);
+	//landmarkTransform->SetModeToSimilarity();
+	//landmarkTransform->SetModeToAffine();
 	landmarkTransform->SetModeToRigidBody();
-	landmarkTransform->Update(); //should this be here?
+	landmarkTransform->Update();
 	
 	vtkSmartPointer<vtkPolyData> source =
     vtkSmartPointer<vtkPolyData>::New();
-	//source->SetPoints(sourcePoints);
 	source = input1;
 	
 	vtkSmartPointer<vtkPolyData> target =
     vtkSmartPointer<vtkPolyData>::New();
-	//target->SetPoints(targetPoints);
 	target = input2;
-	
-	vtkSmartPointer<vtkVertexGlyphFilter> sourceGlyphFilter =
-    vtkSmartPointer<vtkVertexGlyphFilter>::New();
-#if VTK_MAJOR_VERSION <= 5
-	sourceGlyphFilter->SetInputConnection(source->GetProducerPort());
-#else
-	sourceGlyphFilter->SetInputData(source);
-#endif
-	sourceGlyphFilter->Update();
-	
-	vtkSmartPointer<vtkVertexGlyphFilter> targetGlyphFilter =
-    vtkSmartPointer<vtkVertexGlyphFilter>::New();
-#if VTK_MAJOR_VERSION <= 5
-	targetGlyphFilter->SetInputConnection(target->GetProducerPort());
-#else
-	targetGlyphFilter->SetInputData(target);
-#endif
-	targetGlyphFilter->Update();
 	
 	vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter =
     vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-
-	transformFilter->SetInputData(source);
-	//transformFilter->SetInputConnection(sourceGlyphFilter->GetOutputPort());	
+	
+	transformFilter->SetInputData(source);	
 	transformFilter->SetTransform(landmarkTransform);
 	transformFilter->Update();
 	
@@ -267,9 +273,7 @@ void QTVTK_MSVEApplication::on_btnDifference_clicked()
 	// Visualize
 	vtkSmartPointer<vtkPolyDataMapper> sourceMapper =
     vtkSmartPointer<vtkPolyDataMapper>::New();
-	//sourceMapper->SetInputConnection(sourceGlyphFilter->GetOutputPort());
 	sourceMapper->SetInputData(source);
-
 	
 	vtkSmartPointer<vtkActor> sourceActor =
     vtkSmartPointer<vtkActor>::New();
@@ -279,9 +283,7 @@ void QTVTK_MSVEApplication::on_btnDifference_clicked()
 	
 	vtkSmartPointer<vtkPolyDataMapper> targetMapper =
     vtkSmartPointer<vtkPolyDataMapper>::New();
-	//targetMapper->SetInputConnection(targetGlyphFilter->GetOutputPort());
 	targetMapper->SetInputData(target);
-
 	
 	vtkSmartPointer<vtkActor> targetActor =
     vtkSmartPointer<vtkActor>::New();
@@ -292,8 +294,6 @@ void QTVTK_MSVEApplication::on_btnDifference_clicked()
 	vtkSmartPointer<vtkPolyDataMapper> solutionMapper =
     vtkSmartPointer<vtkPolyDataMapper>::New();
 	solutionMapper->SetInputConnection(transformFilter->GetOutputPort());
-	//solutionMapper->SetInputData(transformFilter);
-	
 	
 	vtkSmartPointer<vtkActor> solutionActor =
     vtkSmartPointer<vtkActor>::New();
@@ -315,29 +315,26 @@ void QTVTK_MSVEApplication::on_btnDifference_clicked()
 	
 	std::cout << "Calculating Difference map.."<< "\n"<< "\n";
 	
-	 //Display Difference Map	
-	 vtkSmartPointer<vtkPolyDataMapper> mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
-	 vtkSmartPointer<vtkDistancePolyDataFilter> distanceFilter = vtkSmartPointer<vtkDistancePolyDataFilter>::New();
-	 //distanceFilter->SetInputConnection(0, clean1->GetOutputPort());
-	 //distanceFilter->SetInputConnection(1, clean2->GetOutputPort());
+	//Display Difference Map	
+	vtkSmartPointer<vtkPolyDataMapper> mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
+	vtkSmartPointer<vtkDistancePolyDataFilter> distanceFilter = vtkSmartPointer<vtkDistancePolyDataFilter>::New();
 	
 	distanceFilter->SetInputConnection(0, transformFilter->GetOutputPort());
-	//distanceFilter->SetInputConnection(0, transformFilter->GetOutputPort());
-	//distanceFilter->SetInputConnection(1, targetGlyphFilter->GetOutputPort());
 	distanceFilter->SetInputData(1, target);
 	
-	 distanceFilter->Update();
-	 
-	 mapper2->SetInputConnection(distanceFilter->GetOutputPort());
-	 mapper2->SetScalarRange(
-	 distanceFilter->GetOutput()->GetPointData()->GetScalars()->GetRange()[0],
-	 distanceFilter->GetOutput()->GetPointData()->GetScalars()->GetRange()[1]);
-	 
-	 vtkSmartPointer<vtkActor> actor2 = vtkSmartPointer<vtkActor>::New();
-	 actor2->SetMapper(mapper2);
-	 
+	distanceFilter->Update();
+	
+	mapper2->SetInputConnection(distanceFilter->GetOutputPort());
+	mapper2->SetScalarRange(
+							distanceFilter->GetOutput()->GetPointData()->GetScalars()->GetRange()[0],
+							distanceFilter->GetOutput()->GetPointData()->GetScalars()->GetRange()[1]);
+	
+	vtkSmartPointer<vtkActor> actor2 = vtkSmartPointer<vtkActor>::New();
+	actor2->SetMapper(mapper2);
+	
 	vtkSmartPointer<vtkRenderer> differenceRenderer = 
 	vtkSmartPointer<vtkRenderer>::New();
+	
 	// Add Actor to renderer
 	differenceRenderer->AddActor(actor2);
 	
@@ -351,5 +348,5 @@ void QTVTK_MSVEApplication::on_btnDifference_clicked()
 
 void QTVTK_MSVEApplication::slotExit() 
 {
-  qApp->exit();
+	qApp->exit();
 }
