@@ -35,9 +35,14 @@
 #include <vtkVertexGlyphFilter.h>
 #include <vtkLandmarkTransform.h>
 #include <vtkMatrix4x4.h>
+#include <QFile>
+#include <QMessageBox>
+#include <QtDebug>
 
 double centerReferenceLeft[3], centerReferenceRight[3];
 double posBeforeSternumNotch[3],posBeforeRightNipple[3],posAfterRightNipple[3],posBeforeLeftNipple[3],posAfterSternumNotch[3],posAfterLeftNipple[3],posBeforeNaval[3],posAfterNaval[3];
+
+bool use_stored_landmarks = false;
 
 vtkSmartPointer<vtkPolyData> input1;
 vtkSmartPointer<vtkPolyData> input2;
@@ -144,6 +149,40 @@ QTVTK_MSVEApplication::QTVTK_MSVEApplication()
 	posRightMesh = rep2->GetWorldPosition();
 	//std::cout << "Point position: " << pos[0] << " " << pos[1] << " " << pos[2];
 	
+	QString path = QCoreApplication::applicationDirPath();
+	path.append("/P.txt");
+	QFile file(path);
+	
+	if(!file.open(QIODevice::ReadOnly)) {
+		//Create new file to save landmarks
+		
+		qDebug() <<"Creating new file to save landmarks..." << path;
+	}
+	else {
+		QMessageBox msgBox;
+		msgBox.setText("Landmarks for this image already exist.");
+		msgBox.setInformativeText("Use previously selected landmarks?");
+		QPushButton *newLandmarksButton = msgBox.addButton(tr("Select New"), QMessageBox::ActionRole);
+		msgBox.setStandardButtons(QMessageBox::Yes);
+		msgBox.setDefaultButton(QMessageBox::Yes);
+		
+		int ret = msgBox.exec();
+		
+		if (msgBox.clickedButton() == newLandmarksButton) {
+			qDebug() <<"Unable to open file";
+			//Create new file to save landmarks
+			//The file is created and landmarks are saved right before registration, so a flag is set here
+		} else if (ret == QMessageBox::Yes) {
+			//Read Landmarks from file
+			//However, reading is done right before registration, so a flag is set here
+			qDebug() <<"Opening File...";
+			use_stored_landmarks =  true;
+		}
+		
+	}
+	//file.close();
+	
+	
 	// Set up action signals and slots
 	connect(this->actionExit, SIGNAL(triggered()), this, SLOT(slotExit()));
 }
@@ -165,7 +204,6 @@ void QTVTK_MSVEApplication::on_beforeRightNippleBtn_clicked()
 	posBeforeRightNipple[0] = posLeftMesh[0];
 	posBeforeRightNipple[1] = posLeftMesh[1];
 	posBeforeRightNipple[2] = posLeftMesh[2];
-		sourcePoints->InsertNextPoint(posBeforeRightNipple);
 	std::cout << "Position of right nipple on first mesh: " << posLeftMesh[0] << " " << posLeftMesh[1] << " " << posLeftMesh[2]<< "\n";
 }
 
@@ -175,7 +213,6 @@ void QTVTK_MSVEApplication::on_beforeLeftNippleBtn_clicked()
 	posBeforeLeftNipple[0] = posLeftMesh[0];
 	posBeforeLeftNipple[1] = posLeftMesh[1];
 	posBeforeLeftNipple[2] = posLeftMesh[2];
-		sourcePoints->InsertNextPoint(posBeforeLeftNipple);
 }
 
 void QTVTK_MSVEApplication::on_beforeNavalBtn_clicked()
@@ -184,7 +221,6 @@ void QTVTK_MSVEApplication::on_beforeNavalBtn_clicked()
 	posBeforeNaval[0] = posLeftMesh[0];
 	posBeforeNaval[1] = posLeftMesh[1];
 	posBeforeNaval[2] = posLeftMesh[2];	
-		sourcePoints->InsertNextPoint(posBeforeNaval);
 }
 
 void QTVTK_MSVEApplication::on_afterSternumNotchBtn_clicked()
@@ -201,7 +237,7 @@ void QTVTK_MSVEApplication::on_afterRightNippleBtn_clicked()
 	posAfterRightNipple[0] = posRightMesh[0];
 	posAfterRightNipple[1] = posRightMesh[1];
 	posAfterRightNipple[2] = posRightMesh[2];
-		targetPoints->InsertNextPoint(posAfterRightNipple);
+
 }
 
 void QTVTK_MSVEApplication::on_afterLeftNippleBtn_clicked()
@@ -210,7 +246,7 @@ void QTVTK_MSVEApplication::on_afterLeftNippleBtn_clicked()
 	posAfterLeftNipple[0] = posRightMesh[0];
 	posAfterLeftNipple[1] = posRightMesh[1];
 	posAfterLeftNipple[2] = posRightMesh[2];	
-		targetPoints->InsertNextPoint(posAfterLeftNipple);
+
 }
 
 void QTVTK_MSVEApplication::on_afterNavalBtn_clicked()
@@ -219,28 +255,83 @@ void QTVTK_MSVEApplication::on_afterNavalBtn_clicked()
 	posAfterNaval[0] = posRightMesh[0];
 	posAfterNaval[1] = posRightMesh[1];
 	posAfterNaval[2] = posRightMesh[2];	
-		targetPoints->InsertNextPoint(posAfterNaval);
 }
 void QTVTK_MSVEApplication::on_registration3Marks_clicked()
 {
+	double nextPoint[3];
 	std::cout<< "\n" << "Registration using 3 landmarks..."<< "\n"<< "\n";
-	registration();
 	
+	//If user select to use stored landmarks, read file
+	if(use_stored_landmarks)
+	{
+	std::cout<< "\n" << "Reading stored landmarks..."<< "\n"<< "\n";
+	
+		path = QCoreApplication::applicationDirPath();
+		path.append("/P.txt");
+		QFile file(path);
+		
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+			qDebug() <<"Path not Found" << path;
+		
+
+	 QTextStream in(&file);
+	 
+	 while(!in.atEnd()) {
+	 QString line = in.readLine();     
+	 QStringList fields = line.split(","); 
+	 std::cout<< "\n" << "File output:  "<< "\n";
+	// model->appendRow(fields);    
+	 }
+	 
+	 
+	}
+	//Else, save or overwrite the new landmarks
+	else {
+		/*
+		 
+		 QList<QStandardItem*> items;
+		 
+		 item1 = new QStandardItem("text1");
+		 item2 = new QStandardItem("text2");
+		 item3 = new QStandardItem("text3");
+		 
+		 items.append(item1);
+		 items.append(item2);
+		 items.append(item3);
+		 
+		 QStandardItemModel.appendRow(items);
+		*/
+			
+	}
+	setting_landmarks();	
+	
+	
+	
+	registration();	
 }
 void QTVTK_MSVEApplication::on_registration4Marks_clicked()
 {
 	std::cout<< "\n" << "Registration using 4 landmarks..."<< "\n"<< "\n";	
+	
+	setting_landmarks();
 	sourcePoints->InsertNextPoint(posBeforeSternumNotch);
-	targetPoints->InsertNextPoint(posAfterSternumNotch);
+	targetPoints->InsertNextPoint(posAfterSternumNotch);	
+	
 	registration();
 	
 }
+void QTVTK_MSVEApplication::setting_landmarks()
+{
+	targetPoints->InsertNextPoint(posAfterNaval);
+	targetPoints->InsertNextPoint(posAfterLeftNipple);
+	targetPoints->InsertNextPoint(posAfterRightNipple);
+	sourcePoints->InsertNextPoint(posBeforeRightNipple);
+	sourcePoints->InsertNextPoint(posBeforeNaval);
+	sourcePoints->InsertNextPoint(posBeforeLeftNipple);
+}
+
 void QTVTK_MSVEApplication::registration()	
 {		
-
-	
-	
-	
 	// Setup the transform
 	vtkSmartPointer<vtkLandmarkTransform> landmarkTransform = 
     vtkSmartPointer<vtkLandmarkTransform>::New();

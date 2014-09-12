@@ -22,7 +22,10 @@ public:
 	~QTVTK_MSVEApplication() {};
 	
 	
-		void registration();
+	void registration();
+	void setting_landmarks();
+
+	
 	
 	public slots:
 		
