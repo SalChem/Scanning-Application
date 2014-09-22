@@ -38,9 +38,17 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QtDebug>
+#include <string>
+#include <list>
+#include <iostream>
+#include <tr1/array>
+#include <stdlib.h>
+
+using namespace std;
 
 double centerReferenceLeft[3], centerReferenceRight[3];
 double posBeforeSternumNotch[3],posBeforeRightNipple[3],posAfterRightNipple[3],posBeforeLeftNipple[3],posAfterSternumNotch[3],posAfterLeftNipple[3],posBeforeNaval[3],posAfterNaval[3];
+double *position;
 
 bool use_stored_landmarks = false;
 
@@ -225,18 +233,18 @@ void QTVTK_MSVEApplication::on_beforeNavalBtn_clicked()
 
 void QTVTK_MSVEApplication::on_afterSternumNotchBtn_clicked()
 {
-	posAfterSternumNotch[0] = posLeftMesh[0];
-	posAfterSternumNotch[1] = posLeftMesh[1];
-	posAfterSternumNotch[2] = posLeftMesh[2];
+	posAfterSternumNotch[0] = posRightMesh[0];
+	posAfterSternumNotch[1] = posRightMesh[1];
+	posAfterSternumNotch[2] = posRightMesh[2];
 	std::cout << "Position of sternal notch on first mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
 }
 
 void QTVTK_MSVEApplication::on_afterRightNippleBtn_clicked()
 {
-	std::cout << "Position of right nipple on second mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
 	posAfterRightNipple[0] = posRightMesh[0];
 	posAfterRightNipple[1] = posRightMesh[1];
 	posAfterRightNipple[2] = posRightMesh[2];
+	std::cout << "Position of right nipple on second mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
 
 }
 
@@ -246,7 +254,7 @@ void QTVTK_MSVEApplication::on_afterLeftNippleBtn_clicked()
 	posAfterLeftNipple[0] = posRightMesh[0];
 	posAfterLeftNipple[1] = posRightMesh[1];
 	posAfterLeftNipple[2] = posRightMesh[2];	
-
+	
 }
 
 void QTVTK_MSVEApplication::on_afterNavalBtn_clicked()
@@ -254,64 +262,128 @@ void QTVTK_MSVEApplication::on_afterNavalBtn_clicked()
 	std::cout << "Position of naval on second mesh: " << posRightMesh[0] << " " << posRightMesh[1] << " " << posRightMesh[2]<< "\n";
 	posAfterNaval[0] = posRightMesh[0];
 	posAfterNaval[1] = posRightMesh[1];
-	posAfterNaval[2] = posRightMesh[2];	
+	posAfterNaval[2] = posRightMesh[2];
+	
+}
+void QTVTK_MSVEApplication::readingFile()
+{
+	
+	std::cout<< "\n" << "Reading stored landmarks..."<< "\n"<< "\n";
+	
+	QFile file("/Users/administrator/Documents/Git Projects/Scan Application/Output.txt");
+	//QString path = QCoreApplication::applicationDirPath();
+	//path.append("/Output.txt");
+	//QFile file(path);
+	
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+		//qDebug() <<"Path not Found" << path;
+		qDebug() <<"Path not Found";
+	
+	QTextStream in(&file);
+	int count = 0;
+	QStringList fields;
+	
+	while(!in.atEnd()) {
+		QString line = in.readLine();     
+		fields += line.split(",");  
+		count++;
+	}
+	cout<< "List size:  "<< fields.size()<< "\n";
+	
+	for (int i = 0; i < 3; ++i){
+		string str = fields.at(i).toLocal8Bit().constData();
+		cout << str << endl;
+		posAfterRightNipple[i] = atof(str.c_str());
+	}
+	for (int i = 0; i < 3; ++i){
+		string str = fields.at(i+3).toLocal8Bit().constData();
+		cout << str << endl;
+		posAfterLeftNipple[i]=atof(str.c_str());
+	}
+	for (int i = 0; i < 3; ++i){
+		string str = fields.at(i+6).toLocal8Bit().constData();
+		cout << str << endl;
+		posAfterNaval[i]=atof(str.c_str());
+	}
+	if (fields.size()==12) {
+		for (int i = 0; i < 3; ++i){
+			string str = fields.at(i+9).toLocal8Bit().constData();
+			cout << str << endl;
+			posAfterSternumNotch[i]=atof(str.c_str());
+		}
+	}
+	
 }
 void QTVTK_MSVEApplication::on_registration3Marks_clicked()
 {
-	double nextPoint[3];
 	std::cout<< "\n" << "Registration using 3 landmarks..."<< "\n"<< "\n";
 	
 	//If user select to use stored landmarks, read file
 	if(use_stored_landmarks)
 	{
-	std::cout<< "\n" << "Reading stored landmarks..."<< "\n"<< "\n";
-	
-		path = QCoreApplication::applicationDirPath();
-		path.append("/P.txt");
-		QFile file(path);
-		
-		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-			qDebug() <<"Path not Found" << path;
-		
-
-	 QTextStream in(&file);
-	 
-	 while(!in.atEnd()) {
-	 QString line = in.readLine();     
-	 QStringList fields = line.split(","); 
-	 std::cout<< "\n" << "File output:  "<< "\n";
-	// model->appendRow(fields);    
-	 }
-	 
-	 
+		readingFile();
 	}
 	//Else, save or overwrite the new landmarks
 	else {
-		/*
-		 
-		 QList<QStandardItem*> items;
-		 
-		 item1 = new QStandardItem("text1");
-		 item2 = new QStandardItem("text2");
-		 item3 = new QStandardItem("text3");
-		 
-		 items.append(item1);
-		 items.append(item2);
-		 items.append(item3);
-		 
-		 QStandardItemModel.appendRow(items);
-		*/
-			
+		int argc=3;
+		writeFile(argc);
 	}
 	setting_landmarks();	
-	
-	
-	
 	registration();	
 }
+
+void QTVTK_MSVEApplication::writeFile(int landmarks_Num)
+{
+	QFile file("/Users/administrator/Documents/Git Projects/Scan Application/Output.txt");
+	if (!file.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text)) return;
+	QTextStream output(&file);
+	
+	
+	double coordinates[3][3] = {{posAfterRightNipple[0], posAfterRightNipple[1], posAfterRightNipple[2]},
+								{posAfterLeftNipple[0], posAfterLeftNipple[1], posAfterLeftNipple[2]},
+								{posAfterNaval[0], posAfterNaval[1], posAfterNaval[2]}};
+	
+	for(int i = 0; i<3; i++)
+		{
+			for(int j = 0; j<3; j++)
+			{
+			output << coordinates[i][j]; //writing ith character of array in the file
+			if(j<2)
+				output<<",";
+			else 
+				output<<"\n";
+		}
+	}
+	
+	if(landmarks_Num ==4){
+		for(int i = 0; i<3; i++)
+		{
+			output << posAfterSternumNotch[i]; //writing ith character of array in the file
+			if(i<2)
+				output<<",";
+			else 
+				output<<"\n";
+		}	
+	}
+		
+	
+	file.close();	
+}
+
 void QTVTK_MSVEApplication::on_registration4Marks_clicked()
 {
 	std::cout<< "\n" << "Registration using 4 landmarks..."<< "\n"<< "\n";	
+	
+	//If user select to use stored landmarks, read file
+	if(use_stored_landmarks)
+	{
+		readingFile();
+	}
+	//Else, save or overwrite the new landmarks
+	else {
+		int argc=4;
+		writeFile(argc);
+	}
 	
 	setting_landmarks();
 	sourcePoints->InsertNextPoint(posBeforeSternumNotch);

@@ -24,7 +24,8 @@ public:
 	
 	void registration();
 	void setting_landmarks();
-
+	void writeFile(int landmarks_Num);
+	void readingFile();
 	
 	
 	public slots:
